@@ -17,7 +17,7 @@ timedatectl set-timezone Asia/Shanghai
 ```
 ## 第一步：安装 Node-exporter （被监控端采集）
 作用：采集服务器硬件、系统指标
-``bash
+```bash
 # 下载二进制包（企业生产统一二进制部署，不用yum）
 wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
 
