@@ -50,30 +50,30 @@ setenforce 0
 sed -i 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
 ## 第三步：安装企业基础依赖环境
 后续 Nginx、PHP、数据库、编译依赖全部一次性装好
-bash /
+```bash
 yum install -y gcc gcc-c++ pcre-devel zlib-devel libxml2-devel libcurl-devel libpng-devel openssl-devel
 ## 第四步：分层部署企业 Web 架构 Nginx + PHP-FPM + MariaDB
 Nginx 静态反向代理 → PHP-FPM 动态解析 → MariaDB 数据层，三层分离，中小企业标准生产架构
 ### 4.1 部署 Nginx 并设置开机自启
-bash / 
+```bash 
 yum install -y nginx
 systemctl start nginx
 systemctl enable nginx
 ### 4.2 部署 PHP7.4 + PHP-FPM（独立进程，和 Nginx 解耦）
-bash /
+```bash
 yum install -y epel-release remi-release
 yum install -y php74 php74-fpm php74-mysqlnd php74-gd php74-curl php74-xml
 
 systemctl start php-fpm
 systemctl enable php-fpm
 ### 4.3 部署 MariaDB 数据库 + 生产安全初始化
-bash /
+```bash
 yum install -y mariadb-server mariadb
 systemctl start mariadb
 systemctl enable mariadb
 
 企业数据库安全加固（必做）
-bash /
+```bash
 mysql_secure_installation
 交互操作按企业规范选：
 设置 root 数据库强密码
@@ -83,7 +83,7 @@ mysql_secure_installation
 刷新权限 y
 ## 第五步：创建企业规范目录结构（对标生产）
 统一规划业务、日志、备份路径，不混乱乱放
-bash /
+```bash
 -- 网站代码目录
 mkdir -p /data/www/blog
 -- 日志统一存放目录
@@ -93,10 +93,10 @@ mkdir -p /data/backup/mysql
 ## 第六步：企业 Git 代码上线流程（拒绝解压包上传）
 模仿公司开发提交、运维拉取发布版本
 ### 6.1 安装 Git
-bash /
+```bash
 yum install -y git
 ### 6.2 Git 拉取 WordPress 源码到业务目录
-bash /
+```bash
 git clone https://gitee.com/liuxiaocai/wordpress.git /data/www/blog
 ### 6.3 权限最小化配置（生产安全规范）
 bash /
@@ -107,7 +107,7 @@ chmod -R 755 /data/www/blog
 bash /
 mysql -uroot -p
 ### 7.2 创建独立业务库 + 独立业务账号（面试高频考点）
-sql /
+```sql
 create database blog_prod default character set utf8mb4 collate utf8mb4_unicode_ci;
 -- 仅允许本地应用连接，禁止外网
 create user blog_app@localhost identified by 'Blog@Prod2026';
@@ -118,7 +118,7 @@ exit;
 记录信息：库名：blog_prod账号：blog_app密码：Zcy20030812@
 ## 第八步：手写 Nginx 虚拟主机配置（企业运维核心能力）
 ### 8.1 新建站点配置文件
-bash /
+```bash
 vim /etc/nginx/conf.d/blog.conf
 复制粘贴下面配置（适配 PHP-FPM）：
 
@@ -145,7 +145,7 @@ server {
 }
 esc → 输入 :wq 保存退出
 ### 8.2 检测 Nginx 配置 + 重启生效
-bash /
+```bash
 nginx -t
 systemctl restart nginx
 ## 第九步：浏览器初始化 WordPress 博客
