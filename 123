@@ -11,7 +11,7 @@ TCP	80	0.0.0.0/0	网站 HTTP 访问
 TCP	443	0.0.0.0/0	网站 HTTPS 访问
 第一步：Xshell 连接阿里云 CentOS 7.9 服务器
 打开 Xshell → 文件 → 新建
-名称：自定义（例如：blog-阿里云运维机）
+名称：自定义（例如：blog - 阿里云运维机）
 协议：SSH
 主机：ECS 公网 IP
 端口号：22
@@ -93,8 +93,10 @@ bash
 运行
 # 网站代码目录
 mkdir -p /data/www/blog
+
 # 日志统一存放目录
 mkdir -p /data/logs/nginx
+
 # 数据库/文件备份目录
 mkdir -p /data/backup/mysql
 第六步：企业 Git 代码上线流程（拒绝解压包上传）
@@ -140,7 +142,7 @@ exit;
 bash
 运行
 vim /etc/nginx/conf.d/blog.conf
-复制粘贴下面配置（适配 PHP-FPM），将server_name改为你的 ECS 公网 IP：
+复制粘贴下面配置（适配 PHP-FPM），将 server_name 改为你的 ECS 公网 IP：
 nginx
 server {
     listen 80;
@@ -170,7 +172,8 @@ bash
 nginx -t
 systemctl restart nginx
 第九步：浏览器初始化 WordPress 博客
-浏览器访问：http://你的ECS公网IP填写数据库信息：
+浏览器访问：http://你的ECS公网IP
+填写数据库信息：
 数据库名：blog_prod
 用户名：blog_app
 密码：Zcy20030812@（你设置的密码）
