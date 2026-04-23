@@ -6,8 +6,8 @@
 复制保存：公网 IP、root 用户名、root 密码
 ### 2、放行阿里云安全组（企业最小权限原则）
 ECS 控制台 → 网络与安全 → 安全组 → 配置入方向规则
-| 协议 | 端口 | 授权对象 | | 说明 |
-|-------|-------|-------|-------| 
+| 协议 | 端口 | 授权对象 | 说明 |
+|-----|------|---------|---------| 
 | TCP | 22 | 本地电脑ip | 只允许自己 SSH 连接，防暴力破解 |
 | TCP | 80 | 0.0.0.0/0 | 网站 HTTP 访问 |
 | TCP | 443 | 0.0.0.0/0 | 只网站 HTTPS 访问 |
@@ -21,27 +21,28 @@ ECS 控制台 → 网络与安全 → 安全组 → 配置入方向规则
 登录成功，进入命令行界面
 ## 第二步：企业级服务器基线初始化
 ### 2.1 修改主机名（企业规范）
+```bash
 hostnamectl set-hostname ops-blog-prod
 ## 2.2 配置时间同步（生产集群必须时间统一）
-bash /
+```bash
 yum install -y chrony
 systemctl start chrony
 systemctl enable chrony
 chronyc sources
 ### 2.3 更换阿里云 CentOS7 国内 YUM 源
-bash /
+```bash
 yum install -y wget curl
 mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
 wget -O /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
 yum clean all && yum makecache
 ### 2.4 创建普通运维用户 + 授予 sudo 权限（禁止长期用 root 操作业务）
 企业规范：日常运维不用 root，最小权限
-bash /
+```bash
 useradd opsuser
 echo "Zcy20030812." | passwd opsuser --stdin
 usermod -aG wheel opsuser
 ### 2.5 关闭系统防火墙 + SELinux（云服务器生产常规操作）
-bash /
+```bash
 systemctl stop firewalld
 systemctl disable firewalld
 
