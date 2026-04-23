@@ -172,16 +172,16 @@ systemctl restart nginx
 数据库主机：localhost
 设置博客管理员账号密码，完成安装
 ## 第十步：阿里云免费 SSL 证书 + 全站 HTTPS（企业标配）
-### 1. 阿里云申请免费 SSL 证书
+### 10.1. 阿里云申请免费 SSL 证书
 阿里云控制台搜索：SSL 证书
 选择 免费证书 → 购买 → 选 免费 DVSSL
 输入你的域名（没有域名就用 ECS 公网 IP 也能申请）
 提交后，点 一键验证 → 等待 1 分钟签发
-### 2. 下载证书
+### 10.2. 下载证书
 签发成功 → 下载 → 选择 Nginx下载后得到两个文件：
 xxx.pem
 xxx.key
-### 3. Xshell 上传证书到服务器
+### 10.3. Xshell 上传证书到服务器
 ```bash
 # 创建证书目录
 mkdir -p /etc/nginx/ssl
@@ -190,7 +190,7 @@ mkdir -p /etc/nginx/ssl
 ```plaintext
 /etc/nginx/ssl/
 ```
-### 4. 替换 Nginx 企业级 HTTPS 配置
+### 10.4. 替换 Nginx 企业级 HTTPS 配置
 ```bash
 vim /etc/nginx/conf.d/blog.conf
 ```
@@ -241,14 +241,14 @@ server {
 ```plaintext
 esc → :wq
 ```
-### 5. 重启 Nginx 生效
+### 10.5. 重启 Nginx 生效
 ```bash
 nginx -t
 systemctl restart nginx
 ```
 现在你的网站已经是企业标准 HTTPS 了！
 ## 第十一步：企业级自动备份（每天自动备份数据库 + 网站）
-### 1. 创建备份脚本
+### 11.1. 创建备份脚本
 ```bash
 vim /data/backup/backup.sh
 ```
@@ -272,11 +272,11 @@ zip -r $BACKUP_DIR/blog_$DATE.zip blog/
 find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
 find $BACKUP_DIR -name "*.zip" -mtime +7 -delete
 ```
-### 2. 赋予执行权限
+### 11.2. 赋予执行权限
 bash
 运行
 chmod +x /data/backup/backup.sh
-### 3. 加入定时任务（每天凌晨 2 点自动备份）
+### 11.3. 加入定时任务（每天凌晨 2 点自动备份）
 bash
 运行
 crontab -e
@@ -286,7 +286,7 @@ bash
 0 2 * * * /data/backup/backup.sh
 企业自动化备份完成！
 ## 第十二步：企业级安全加固（求职必做，非常加分）
-### 1. 禁止 root 远程登录（生产标准）
+### 12.1. 禁止 root 远程登录（生产标准）
 ```bash
 vim /etc/ssh/sshd_config
 ```
@@ -299,7 +299,7 @@ PermitRootLogin no
 systemctl restart sshd
 ```
 以后只能用 opsuser 登录，再 sudo 切换 root。
-### 2. 修改 SSH 默认端口（防暴力破解）
+### 12.2. 修改 SSH 默认端口（防暴力破解）
 ```bash
 vim /etc/ssh/sshd_config
 ```
@@ -312,14 +312,14 @@ Port 2718
 systemctl restart sshd
 ```
 阿里云安全组必须放行 2718 端口
-### 3. 网站目录权限加固（最安全）
+### 12.3. 网站目录权限加固（最安全）
 ```bash
 chown -R nginx:nginx /data/www/blog
 find /data/www/blog -type d -exec chmod 755 {} \;
 find /data/www/blog -type f -exec chmod 644 {} \;
 chmod 600 /data/www/blog/wp-config.php
 ```
-### 4. 关闭数据库远程连接（企业必须）
+### 12.4. 关闭数据库远程连接（企业必须）
 ```bash
 vim /etc/my.cnf
 ```
