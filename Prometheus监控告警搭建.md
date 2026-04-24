@@ -104,10 +104,10 @@ systemctl enable grafana-server
 ```
 访问：ip:3000默认账号密码：admin / admin
 ### 3. Grafana 对接 Prometheus + 导入 Linux 大屏模板
-配置数据源 → 选择 Prometheus
-地址填写：http://127.0.0.1:9090
-导入Linux 监控模版 ID：8919
-直接生成专业企业级 CPU / 内存 / 磁盘 / 负载大屏
+配置数据源 → 选择 Prometheus  
+地址填写：http://127.0.0.1:9090  
+导入Linux 监控模版 ID：8919  
+直接生成专业企业级 CPU / 内存 / 磁盘 / 负载大屏  
 ## 第四步：部署 Alertmanager + 企业邮件告警（核心亮点）
 实现：CPU 过高、磁盘快满、服务器挂掉自动发你邮箱
 ### 1. 安装 Alertmanager
