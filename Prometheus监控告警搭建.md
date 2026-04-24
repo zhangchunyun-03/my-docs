@@ -57,7 +57,7 @@ mv prometheus-2.53.0.linux-amd64 /usr/local/prometheus
 ```bash
 vim /usr/local/prometheus/prometheus.yml
 ```
-替换为下面内容：
+替换为下面对应内容：
 ```yaml
 global:
   scrape_interval: 15s
@@ -288,7 +288,7 @@ systemctl start node_exporter
 pkill stress
 ```
 
-## 常见问题排查（必看）
+## 常见问题排查
 ### 1.仪表盘全是 “无数据”
 检查 Prometheus 配置是否正确，node_exporter 的 scrape_configs 是否添加，且 Prometheus 能正常抓取 9100 端口；  
 访问 Prometheus UI：http://你的服务器IP:9090 → Status → Targets，看 linux-server 这个 job 的状态是否为 UP；  
@@ -299,4 +299,5 @@ pkill stress
 ### 3.Grafana 访问不了
 检查服务器安全组 / 防火墙是否开放 3000 端口；  
 检查 grafana-server 服务状态是否正常，日志是否报错：journalctl -u grafana-server -f。  
-
+### 4.从GitHub下载二进制包慢
+可以去国内镜像源网站（清华，阿里云，腾讯云等）下载二进制包到Windows本机下，然后上传到Xshell。
