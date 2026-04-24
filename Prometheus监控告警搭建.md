@@ -104,7 +104,7 @@ systemctl enable grafana-server
 ```
 访问：ip:3000默认账号密码：admin / admin
 ### 3. Grafana 对接 Prometheus + 导入 Linux 大屏模板
-#### 配置数据源 → 选择 Prometheus  
+#### 3.1 配置数据源 → 选择 Prometheus  
 ##### 步骤 1：进入数据源配置页面
 登录 Grafana 后，点击左侧菜单栏的 ⚙️ Configuration（配置） → Data sources（数据源）  
 点击右上角的 Add data source（添加数据源）  
@@ -120,12 +120,12 @@ Scrape interval	保持默认或 15s	和 Prometheus 的 scrape_interval 保持一
 拉到页面底部，点击 Save & test（保存并测试）  
 出现 Data source is working 绿色提示，说明对接成功；  
 如果报错，检查：Prometheus 是否正常运行、端口 9090 是否开放、URL 是否正确、防火墙 / 安全组是否放行。  
-#### 导入 Linux 监控大屏模板（推荐模板号：1860）
-这个模板是 Grafana 社区最通用的 node_exporter 监控模板，支持 CPU、内存、磁盘、网络等全维度监控。
+#### 3.2 导入 Linux 监控大屏模板（企业模板号：8919）
+直接生成专业企业级 CPU / 内存 / 磁盘 / 负载大屏
 ##### 步骤 1：导入模板
 点击左侧菜单栏的 Dashboards（仪表盘） → Import（导入）
-在 Import via grafana.com 下方输入模板 ID：1860，点击 Load
-也可以直接访问模板页面：Grafana Dashboard 1860，下载 JSON 文件后上传。
+在 Import via grafana.com 下方输入模板 ID：8919，点击 Load
+也可以直接访问模板页面：Grafana Dashboard 8919，下载 JSON 文件后上传。
 ##### 步骤 2：配置导入参数
 导入页面中，Prometheus 数据源 选择你刚才添加的 Prometheus-Linux
 其他选项保持默认，点击 Import 完成导入。
