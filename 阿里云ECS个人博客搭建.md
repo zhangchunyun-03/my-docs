@@ -26,8 +26,8 @@ hostnamectl set-hostname ops-blog-prod
 ## 2.2 配置时间同步（生产集群必须时间统一）
 ```bash
 yum install -y chrony
-systemctl start chrony
-systemctl enable chrony
+systemctl start chronyd
+systemctl enable chronyd
 chronyc sources
 ### 2.3 更换阿里云 CentOS7 国内 YUM 源
 ```bash
@@ -40,15 +40,19 @@ yum clean all && yum makecache
 企业规范：日常运维不用 root，最小权限
 ```bash
 useradd opsuser
+-- 给 opsuser 这个用户设置密码
 echo "Zcy20030812." | passwd opsuser --stdin
+-- 把 opsuser 用户加入 wheel 管理员组
 usermod -aG wheel opsuser
 ```
 ### 2.5 关闭系统防火墙 + SELinux（云服务器生产常规操作）
 ```bash
+-- 通常在服务器内部网络环境、或者已经有上层安全组 / 云防火墙防护时，会临时关闭系统自带的 firewalld，避免端口被拦截。
 systemctl stop firewalld
 systemctl disable firewalld
 
 setenforce 0
+-- 直接修改 SELinux 配置文件，把强制模式改成禁用模式
 sed -i 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
 ```
 ## 三、安装企业基础依赖环境
@@ -78,6 +82,19 @@ yum install -y mariadb-server mariadb
 systemctl start mariadb
 systemctl enable mariadb
 
+-- 1.先获取 MySQL 初始临时密码,复制
+grep 'temporary password' /var/log/mysqld.log
+-- 2.用临时密码登录 MySQL
+mysql -uroot -p
+# 回车后，粘贴刚才获取的临时密码
+```
+修改 root 密码（必须符合复杂度要求：大小写 + 数字 + 特殊符号）
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED BY '你的新密码';
+FLUSH PRIVILEGES;
+exit;
+```
+```bash
 -- 企业数据库安全加固（必做）
 mysql_secure_installation
 ```
@@ -121,7 +138,7 @@ mysql -uroot -p
 ```sql
 create database blog_prod default character set utf8mb4 collate utf8mb4_unicode_ci;
 -- 仅允许本地应用连接，禁止外网
-create user blog_app@localhost identified by 'Blog@Prod2026';
+create user blog_app@localhost identified by 'Zcy20030812@';
 -- 最小权限授权
 grant all privileges on blog_prod.* to blog_app@localhost;
 flush privileges;
@@ -331,3 +348,58 @@ bind-address = 127.0.0.1
 ```bash
 systemctl restart mariadb
 ```
+
+## 遇到的问题解决
+### 1.连接不上Xshell
+#### 方法1： 临时最简单解决（先能连上再说）  
+去阿里云安全组，先把 22 端口暂时改回 0.0.0.0/0 全网允许  
+#### 方法2： 查出【阿里云眼里你真实的 IP】
+你本地看到的公网 IP ≠ 阿里云服务器收到的真实来源 IP  
+现在 Xshell 已经连上服务器，在服务器里执行：  
+```bash
+last -i
+```
+看这次登录记录里的 IP 地址,这个才是阿里云防火墙真实识别到的我的IP，不是电脑 cmd 查到的那个  
+然后去服务器的安全组修改ssh远程登录的ip（ip/32）
+### 2.执行 git clone 时，系统提示 Username for 'https://gitee.com':
+说明：这个仓库要么是私有仓库，需要 Gitee 账号密码授权访问；要么是你当前的网络 / 仓库地址有问题，导致匿名访问失败。
+#### 方法1：用 Gitee 账号授权下载
+当提示 Username for 'https://gitee.com': 时，输入你的 Gitee 用户名  
+回车后，再输入你的 Gitee 密码（或个人访问令牌）  
+验证通过后，就能正常下载代码了  
+#### 方法2：改用公开仓库的地址
+如果这是一个公开仓库，大概率是地址写错了。你可以直接用浏览器打开 https://gitee.com/liuxiaocai/wordpress.git 看看：  
+如果能直接访问、下载 ZIP 包，说明仓库是公开的，换用下面这种方式下载：  
+```bash
+# 直接下载 ZIP 包，不用 git
+wget https://gitee.com/liuxiaocai/wordpress/repository/archive/master.zip -O wordpress.zip
+unzip wordpress.zip -d /data/www/blog
+```
+如果浏览器里提示需要登录，说明这是私有仓库，只能用方法1授权访问。
+#### 方法3：终止当前命令（ctrl + C）
+既然这个地址要账号，咱们直接绕开它，用 wget 下载压缩包就行：
+```bash
+# 1. 先创建目标目录
+mkdir -p /data/www/blog
+# 2. 下载WordPress官方包（不用Gitee账号，直接从官网下）
+wget https://cn.wordpress.org/latest-zh_CN.zip -O /tmp/wordpress.zip
+# 3. 解压到目标目录
+unzip /tmp/wordpress.zip -d /data/www/blog
+# 4. 调整权限
+chown -R nginx:nginx /data/www/blog
+```
+这样就能直接拿到完整的 WordPress 源码，不用注册任何账号。
+### 3.被 WordPress 官网限流了（429）
+用我的 GitHub 高速镜像
+```bash
+mkdir -p /data/www/blog
+wget https://github.com/WordPress/WordPress/archive/refs/heads/master.zip -O /tmp/wp.zip
+unzip /tmp/wp.zip -d /tmp
+mv /tmp/WordPress-master/* /data/www/blog/
+chown -R nginx:nginx /data/www/blog
+```
+第三步：验证是否下载成功
+```bash
+ls /data/www/blog
+```
+只要出现 wp-config.php 这些文件，就成功了！
