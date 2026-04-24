@@ -1,25 +1,25 @@
 # 阿里云ECS个人博客搭建
 ## 前置准备（先把阿里云试用 ECS 配置好）
-### 1、ECS 必做配置
-进入阿里云 ECS 实例 → 重置实例密码（root 账号密码，自己记牢）
-重置密码后 重启 ECS 实例
+### 1.ECS 必做配置
+进入阿里云 ECS 实例 → 重置实例密码（root 账号密码，自己记牢）  
+重置密码后 重启 ECS 实例  
 复制保存：公网 IP、root 用户名、root 密码
-### 2、放行阿里云安全组（企业最小权限原则）
+### 2.放行阿里云安全组（企业最小权限原则）
 ECS 控制台 → 网络与安全 → 安全组 → 配置入方向规则
 | 协议 | 端口 | 授权对象 | 说明 |
 |-----|------|---------|---------| 
 | TCP | 22 | 本地电脑ip | 只允许自己 SSH 连接，防暴力破解 |
 | TCP | 80 | 0.0.0.0/0 | 网站 HTTP 访问 |
 | TCP | 443 | 0.0.0.0/0 | 只网站 HTTPS 访问 |
-## 第一步：Xshell 连接阿里云 CentOS7.9 服务器
-打开 Xshell → 文件 → 新建
-名称：自定义（blog - 阿里云运维机）
-协议：SSH
-主机：ECS公网IP
-端口号：22
-点击连接，输入用户名：root，再输入重置的 root 密码
+## 一、Xshell 连接阿里云 CentOS7.9 服务器
+打开 Xshell → 文件 → 新建  
+名称：自定义（blog - 阿里云运维机）  
+协议：SSH  
+主机：ECS公网IP  
+端口号：22  
+点击连接，输入用户名：root，再输入重置的 root 密码  
 登录成功，进入命令行界面
-## 第二步：企业级服务器基线初始化
+## 二、企业级服务器基线初始化
 ### 2.1 修改主机名（企业规范）
 ```bash
 hostnamectl set-hostname ops-blog-prod
@@ -51,12 +51,12 @@ systemctl disable firewalld
 setenforce 0
 sed -i 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
 ```
-## 第三步：安装企业基础依赖环境
+## 三、安装企业基础依赖环境
 后续 Nginx、PHP、数据库、编译依赖全部一次性装好
 ```bash
 yum install -y gcc gcc-c++ pcre-devel zlib-devel libxml2-devel libcurl-devel libpng-devel openssl-devel
 ```
-## 第四步：分层部署企业 Web 架构 Nginx + PHP-FPM + MariaDB
+## 四、分层部署企业 Web 架构 Nginx + PHP-FPM + MariaDB
 Nginx 静态反向代理 → PHP-FPM 动态解析 → MariaDB 数据层，三层分离，中小企业标准生产架构
 ### 4.1 部署 Nginx 并设置开机自启
 ```bash 
@@ -81,13 +81,13 @@ systemctl enable mariadb
 -- 企业数据库安全加固（必做）
 mysql_secure_installation
 ```
-交互操作按企业规范选：
-设置 root 数据库强密码
-移除匿名用户 y
-禁止 root 远程登录 y
-删除测试库 y
-刷新权限 y
-## 第五步：创建企业规范目录结构（对标生产）
+交互操作按企业规范选：  
+设置 root 数据库强密码  
+移除匿名用户 y  
+禁止 root 远程登录 y  
+删除测试库 y  
+刷新权限 y  
+## 五、创建企业规范目录结构（对标生产）
 统一规划业务、日志、备份路径，不混乱乱放
 ```bash
 -- 网站代码目录
@@ -97,7 +97,7 @@ mkdir -p /data/logs/nginx
 -- 数据库/文件备份目录
 mkdir -p /data/backup/mysql
 ```
-## 第六步：企业 Git 代码上线流程（拒绝解压包上传）
+## 六、企业 Git 代码上线流程（拒绝解压包上传）
 模仿公司开发提交、运维拉取发布版本
 ### 6.1 安装 Git
 ```bash
@@ -112,7 +112,7 @@ git clone https://gitee.com/liuxiaocai/wordpress.git /data/www/blog
 chown -R nginx:nginx /data/www/blog
 chmod -R 755 /data/www/blog
 ```
-## 第七步：数据库生产级配置（不使用 root 建站）
+## 七、数据库生产级配置（不使用 root 建站）
 ### 7.1 进入数据库
 ```bash
 mysql -uroot -p
@@ -128,7 +128,7 @@ flush privileges;
 exit;
 ```
 记录信息：库名：blog_prod账号：blog_app密码：Zcy20030812@
-## 第八步：手写 Nginx 虚拟主机配置（企业运维核心能力）
+## 八、手写 Nginx 虚拟主机配置（企业运维核心能力）
 ### 8.1 新建站点配置文件
 ```bash
 vim /etc/nginx/conf.d/blog.conf
@@ -163,25 +163,25 @@ esc → 输入 :wq 保存退出
 nginx -t
 systemctl restart nginx
 ```
-## 第九步：浏览器初始化 WordPress 博客
-浏览器访问：http://ECS公网IP
-填写数据库信息：
-数据库名：blog_prod
-用户名：blog_app
-密码：Zcy20030812@
-数据库主机：localhost
+## 九、浏览器初始化 WordPress 博客
+浏览器访问：http://ECS公网IP  
+填写数据库信息：  
+数据库名：blog_prod  
+用户名：blog_app  
+密码：Zcy20030812@  
+数据库主机：localhost  
 设置博客管理员账号密码，完成安装
-## 第十步：阿里云免费 SSL 证书 + 全站 HTTPS（企业标配）
-### 10.1. 阿里云申请免费 SSL 证书
+## 十、阿里云免费 SSL 证书 + 全站 HTTPS（企业标配）
+### 10.1 阿里云申请免费 SSL 证书
 阿里云控制台搜索：SSL 证书
 选择 免费证书 → 购买 → 选 免费 DVSSL
 输入你的域名（没有域名就用 ECS 公网 IP 也能申请）
 提交后，点 一键验证 → 等待 1 分钟签发
-### 10.2. 下载证书
+### 10.2 下载证书
 签发成功 → 下载 → 选择 Nginx下载后得到两个文件：
 xxx.pem
 xxx.key
-### 10.3. Xshell 上传证书到服务器
+### 10.3 Xshell 上传证书到服务器
 ```bash
 # 创建证书目录
 mkdir -p /etc/nginx/ssl
@@ -190,7 +190,7 @@ mkdir -p /etc/nginx/ssl
 ```plaintext
 /etc/nginx/ssl/
 ```
-### 10.4. 替换 Nginx 企业级 HTTPS 配置
+### 10.4 替换 Nginx 企业级 HTTPS 配置
 ```bash
 vim /etc/nginx/conf.d/blog.conf
 ```
@@ -241,14 +241,14 @@ server {
 ```plaintext
 esc → :wq
 ```
-### 10.5. 重启 Nginx 生效
+### 10.5 重启 Nginx 生效
 ```bash
 nginx -t
 systemctl restart nginx
 ```
 现在你的网站已经是企业标准 HTTPS 了！
-## 第十一步：企业级自动备份（每天自动备份数据库 + 网站）
-### 11.1. 创建备份脚本
+## 十一、企业级自动备份（每天自动备份数据库 + 网站）
+### 11.1 创建备份脚本
 ```bash
 vim /data/backup/backup.sh
 ```
@@ -272,11 +272,11 @@ zip -r $BACKUP_DIR/blog_$DATE.zip blog/
 find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
 find $BACKUP_DIR -name "*.zip" -mtime +7 -delete
 ```
-### 11.2. 赋予执行权限
+### 11.2 赋予执行权限
 bash
 运行
 chmod +x /data/backup/backup.sh
-### 11.3. 加入定时任务（每天凌晨 2 点自动备份）
+### 11.3 加入定时任务（每天凌晨 2 点自动备份）
 bash
 运行
 crontab -e
@@ -285,8 +285,8 @@ bash
 运行
 0 2 * * * /data/backup/backup.sh
 企业自动化备份完成！
-## 第十二步：企业级安全加固（求职必做，非常加分）
-### 12.1. 禁止 root 远程登录（生产标准）
+## 十二、企业级安全加固（求职必做）
+### 12.1 禁止 root 远程登录（生产标准）
 ```bash
 vim /etc/ssh/sshd_config
 ```
@@ -299,7 +299,7 @@ PermitRootLogin no
 systemctl restart sshd
 ```
 以后只能用 opsuser 登录，再 sudo 切换 root。
-### 12.2. 修改 SSH 默认端口（防暴力破解）
+### 12.2 修改 SSH 默认端口（防暴力破解）
 ```bash
 vim /etc/ssh/sshd_config
 ```
@@ -312,14 +312,14 @@ Port 2718
 systemctl restart sshd
 ```
 阿里云安全组必须放行 2718 端口
-### 12.3. 网站目录权限加固（最安全）
+### 12.3 网站目录权限加固（最安全）
 ```bash
 chown -R nginx:nginx /data/www/blog
 find /data/www/blog -type d -exec chmod 755 {} \;
 find /data/www/blog -type f -exec chmod 644 {} \;
 chmod 600 /data/www/blog/wp-config.php
 ```
-### 12.4. 关闭数据库远程连接（企业必须）
+### 12.4 关闭数据库远程连接（企业必须）
 ```bash
 vim /etc/my.cnf
 ```
