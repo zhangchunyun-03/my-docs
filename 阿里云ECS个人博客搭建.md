@@ -403,3 +403,75 @@ chown -R nginx:nginx /data/www/blog
 ls /data/www/blog
 ```
 只要出现 wp-config.php 这些文件，就成功了！
+### 4.没有域名，申请不了SSL证书
+阿里云免费证书必须绑定已备案域名
+#### 方法1：用真实域名（推荐，长期可用）
+步骤 1：注册并解析域名  
+去阿里云 / 腾讯网 / Namecheap 注册一个真实域名（如 你的域名.com）  
+进入域名解析控制台，添加 2 条记录：  
+| 主机记录 | 类型 |	记录值 |
+|---------|------|---------|
+| blog | A | 8.163.108.4 |
+| www.blog | A | 8.163.108.4 |
+保存，等待生效（通常 1-10 分钟）  
+步骤 2：验证域名是否解析成功  
+服务器上执行，能解析到你的 IP 就 OK
+```bash
+ping -c 2 blog.你的域名.com
+```
+步骤 3：重新申请证书
+```bash
+certbot --nginx -d blog.你的域名.com -d www.你的域名.com
+```
+#### 方法2：用服务器 IP 直接配 HTTPS（简单测试用）
+如果你暂时没有域名，直接用 IP 配 HTTPS，不用域名解析  
+步骤 1：停止并删除之前的配置
+```bash
+# 停止证书申请
+Ctrl + C
+# 删除自动生成的Nginx配置（如果有）
+rm -rf /etc/nginx/conf.d/000-default.conf
+```
+步骤 2：手动生成自签证书（测试用）
+```bash
+mkdir -p /etc/nginx/ssl
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt
+```
+填信息时直接回车默认即可
+步骤 3：配置 Nginx（替换成你的博客配置）
+创建 /etc/nginx/conf.d/blog-ssl.conf：
+```nginx
+server {
+    listen 443 ssl;
+    server_name 8.163.108.4; # 你的服务器IP
+
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+
+    root /data/www/blog;
+    index index.php index.html;
+
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+
+# 可选：HTTP自动跳HTTPS
+server {
+    listen 80;
+    server_name 8.163.108.4;
+    return 301 https://$host$request_uri;
+}
+```
+步骤 4：生效配置
+```bash
+nginx -t && systemctl restart nginx
+```
+浏览器访问：https://8.163.108.4（信任不安全提示即可）
