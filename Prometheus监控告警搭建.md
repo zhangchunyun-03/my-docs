@@ -226,9 +226,66 @@ groups:
       summary: "服务器宕机或监控采集中断"
 ```
 保存退出。
-### 6.3. 启动 Alertmanager
+### 6.3 在 prometheus 主配置里引入告警 + 告警管理器
 ```bash
+vim /usr/local/prometheus/prometheus.yml
+```
+改成下面完整配置（把 alertmanager 地址加上、加载规则）：
+```yaml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/linux-alert.yml"
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+        - 127.0.0.1:9093
+
+scrape_configs:
+  - job_name: 'linux-server'
+    static_configs:
+    - targets: ['你的ECS公网IP:9100']
+```
+保存退出，校验配置：
+```bash
+/usr/local/prometheus/promtool check config /usr/local/prometheus/prometheus.yml
+```
+出现 SUCCESS 才可以重启
+## 七、重启所有监控组件让告警生效
+```bash
+# 重启prometheus
+systemctl restart prometheus
+
+# 重启alertmanager
+pkill alertmanager
 nohup /usr/local/alertmanager/alertmanager --storage.path=/usr/local/alertmanager/data >/dev/null 2>&1 &
+```
+## 八、阿里云安全组必须放行监控端口
+入方向放行：
+9090 Prometheus  
+3000 Grafana  
+9100 Node-exporter  
+9093 Alertmanager  
+## 九、模拟故障 + 验证 QQ 邮箱告警
+### 9.1. 模拟服务器宕机告警（最简单）
+```bash
+systemctl stop node_exporter
+```
+等待 30 秒左右，你的 QQ 邮箱自动收到告警邮件
+### 9.2. 模拟 CPU 爆满压测（验证 CPU 告警）
+```bash
+yum install -y stress
+stress --cpu 4
+```
+一分钟内触发 CPU 高负载邮件告警
+测试完恢复：
+```bash
+systemctl start node_exporter
+pkill stress
 ```
 
 ## 常见问题排查（必看）
