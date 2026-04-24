@@ -92,19 +92,19 @@ systemctl enable prometheus
 ```
 访问：ip:9090 Prometheus 后台正常
 ## 四、安装 Grafana 企业大屏展示
-### 1. 安装 Grafana
+### 4.1 安装 Grafana
 ```bash
 wget https://dl.grafana.com/oss/release/grafana-10.2.3-1.x86_64.rpm
 yum install -y grafana-10.2.3-1.x86_64.rpm
 ```
-### 2. 启动 + 开机自启
+### 4.2. 启动 + 开机自启
 ```bash
 systemctl start grafana-server
 systemctl enable grafana-server
 ```
 访问：ip:3000默认账号密码：admin / admin
-### 3. Grafana 对接 Prometheus + 导入 Linux 大屏模板
-#### 3.1 配置数据源 → 选择 Prometheus  
+### 4.3. Grafana 对接 Prometheus + 导入 Linux 大屏模板
+#### 4.3.1 配置数据源 → 选择 Prometheus  
 ##### 步骤 1：进入数据源配置页面
 登录 Grafana 后，点击左侧菜单栏的 ⚙️ Configuration（配置） → Data sources（数据源）  
 点击右上角的 Add data source（添加数据源）  
@@ -112,15 +112,16 @@ systemctl enable grafana-server
 ##### 步骤 2：配置 Prometheus 连接信息
 按以下关键配置填写：
 | 配置项 |	填写内容	| 说明 |
-Name	Prometheus-Linux	自定义名称，方便识别
-URL	http://127.0.0.1:9090	Prometheus 服务地址（如果 Prometheus 不在本机，改成对应 IP + 端口）
-Access	Server (default)	保持默认，由 Grafana 服务端访问 Prometheus
-Scrape interval	保持默认或 15s	和 Prometheus 的 scrape_interval 保持一致
+|--------|--------|------|
+| Name |	Prometheus-Linux |	自定义名称，方便识别 |
+| URL |	http://127.0.0.1:9090	 | Prometheus服务地址（如果 Prometheus 不在本机，改成对应 IP + 端口）|
+| Access |	Server (default)	| 保持默认，由 Grafana 服务端访问 Prometheus |
+| Scrape interval	| 保持默认或 15s	 | 和 Prometheus 的 scrape_interval 保持一致 |
 ##### 步骤 3：测试连接并保存
 拉到页面底部，点击 Save & test（保存并测试）  
 出现 Data source is working 绿色提示，说明对接成功；  
 如果报错，检查：Prometheus 是否正常运行、端口 9090 是否开放、URL 是否正确、防火墙 / 安全组是否放行。  
-#### 3.2 导入 Linux 监控大屏模板（企业模板号：8919）
+#### 4.3.2 导入 Linux 监控大屏模板（企业模板号：8919）
 直接生成专业企业级 CPU / 内存 / 磁盘 / 负载大屏
 ##### 步骤 1：导入模板
 点击左侧菜单栏的 Dashboards（仪表盘） → Import（导入）
@@ -133,14 +134,20 @@ Scrape interval	保持默认或 15s	和 Prometheus 的 scrape_interval 保持一
 导入完成后，会自动跳转到 Linux 监控仪表盘，就能看到服务器的 CPU、内存、磁盘、网络、负载等指标数据了。
 ## 五、部署 Alertmanager + 企业邮件告警（核心亮点）
 实现：CPU 过高、磁盘快满、服务器挂掉自动发你邮箱
-### 1. 安装 Alertmanager
+### 5.1 安装 Alertmanager
 ```bash
 wget https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertmanager-0.27.0.linux-amd64.tar.gz
 
 tar zxf alertmanager-0.27.0.linux-amd64.tar.gz
 mv alertmanager-0.27.0.linux-amd64 /usr/local/alertmanager
 ```
-### 2. 配置邮箱告警（用 QQ 邮箱 / 163 邮箱）
+### 5.2 先获取 QQ 邮箱【授权码】（必须）
+登录 QQ 邮箱网页版 → 设置 → 账户  
+往下找到：POP3/IMAP/SMTP 服务  
+开启：SMTP 服务  
+验证密保 → 拿到授权码（一串 16 位字母数字）  
+记住：授权码就是后面的密码，不要泄露
+### 5.3 配置邮箱告警
 ```bash
 vim /usr/local/alertmanager/alertmanager.yml
 ```
@@ -166,24 +173,73 @@ receivers:
     smtp_auth_password: 你的邮箱授权码
     smtp_require_tls: false
 ```
-### 3. 配置 Prometheus 告警规则 + 触发阈值
-CPU 使用率超过 80%、磁盘使用率超过 85%、服务器宕机 立刻告警
-### 4. 启动 Alertmanager
+esc :wq 保存退出
+## 六、配置 Prometheus 企业级告警规则（CPU / 内存 / 磁盘 / 宕机）
+### 6.1 创建告警规则目录
+```bash
+mkdir -p /usr/local/prometheus/rules
+```
+### 6.2 编写告警规则文件
+```bash
+vim /usr/local/prometheus/rules/linux-alert.yml
+```
+粘贴下面生产级别告警规则（直接可用）
+```yaml
+groups:
+- name: linux-server-alert
+  rules:
+  # 1. CPU使用率超过80% 严重告警
+  - alert: CPU高负载
+    expr: (100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)) > 80
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "服务器CPU使用率过高"
+      description: "CPU当前使用率大于80%，请及时排查！"
+
+  # 2. 内存使用率超过85%告警
+  - alert: 内存使用率过高
+    expr: (1 - (node_memory_MemFree_bytes + node_memory_Buffers_bytes + node_memory_Cached_bytes) / node_memory_MemTotal_bytes) * 100 > 85
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "服务器内存占用过高"
+
+  # 3. 磁盘使用率大于85%告警
+  - alert: 磁盘空间即将占满
+    expr: 100 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100) > 85
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "根分区磁盘空间不足，尽快清理"
+
+  # 4. 服务器宕机/监控失联
+  - alert: 服务器节点失联
+    expr: up{job="linux-server"} == 0
+    for: 30s
+    labels:
+      severity: critical
+    annotations:
+      summary: "服务器宕机或监控采集中断"
+```
+保存退出。
+### 6.3. 启动 Alertmanager
 ```bash
 nohup /usr/local/alertmanager/alertmanager --storage.path=/usr/local/alertmanager/data >/dev/null 2>&1 &
 ```
 
 ## 常见问题排查（必看）
-### 一、仪表盘全是 “无数据”
-检查 Prometheus 配置是否正确，node_exporter 的 scrape_configs 是否添加，且 Prometheus 能正常抓取 9100 端口；
-访问 Prometheus UI：http://你的服务器IP:9090 → Status → Targets，看 linux-server 这个 job 的状态是否为 UP；
-检查 Grafana 数据源配置是否正确，是否能正常连接 Prometheus。
-部分面板无数据
-确认 node_exporter 已安装并运行（端口 9100）；
-部分磁盘、文件系统指标，需要 node_exporter 启动时开启对应采集器，默认一般是开启的，不用额外配置。
-Grafana 访问不了
-检查服务器安全组 / 防火墙是否开放 3000 端口；
-检查 grafana-server 服务状态是否正常，日志是否报错：journalctl -u grafana-server -f。
-地址填写：http://127.0.0.1:9090  
-导入Linux 监控模版 ID：8919  
-直接生成专业企业级 CPU / 内存 / 磁盘 / 负载大屏  
+### 1.仪表盘全是 “无数据”
+检查 Prometheus 配置是否正确，node_exporter 的 scrape_configs 是否添加，且 Prometheus 能正常抓取 9100 端口；  
+访问 Prometheus UI：http://你的服务器IP:9090 → Status → Targets，看 linux-server 这个 job 的状态是否为 UP；  
+检查 Grafana 数据源配置是否正确，是否能正常连接 Prometheus。  
+### 2.部分面板无数据
+确认 node_exporter 已安装并运行（端口 9100）；   
+部分磁盘、文件系统指标，需要 node_exporter 启动时开启对应采集器，默认一般是开启的，不用额外配置。  
+### 3.Grafana 访问不了
+检查服务器安全组 / 防火墙是否开放 3000 端口；  
+检查 grafana-server 服务状态是否正常，日志是否报错：journalctl -u grafana-server -f。  
+
